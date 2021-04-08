@@ -1,0 +1,28 @@
+{
+  "description": "R/qtl2 mapping Liver Histology and Blood data - Pazdro Lab - scripts developed by Rebecca Gould",
+  "crosstype": "do",
+  "geno": "geno_sorted.csv",
+  "geno_transposed": true,
+  "founder_geno": "founder_geno_sorted.csv",
+  "founder_geno_transposed": true,
+  "genotypes": {
+    "1": "1",
+    "2": "2",
+    "3": "3"
+  },
+  "pheno": "pheno.csv",
+  "pheno_transposed": false,
+  "covar": "covar.csv",
+  "sex": {
+    "covar": "sex",
+    "F": "F",
+    "M": "M"
+  },
+  "x_chr": "X",
+  "cross_info": {
+    "covar": "generation"
+  },
+  "gmap": "gmap_sorted.csv",
+  "pmap": "pmap_sorted.csv",
+  "alleles": ["A", "B", "C", "D", "E", "F", "G", "H"]
+}
