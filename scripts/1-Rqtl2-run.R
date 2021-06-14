@@ -5,17 +5,17 @@
 ## Load in necessary packages
 ####################################################
 
-library(qtl2)
-library (tidyverse)
-library (readxl)
-library(yaml)
-library(devtools)
-library(jsonlite)
-library (data.table)
-library (RcppEigen)
-library (pander)
-library (writexl)
-library (RSQLite)
+  library(qtl2)
+  library (tidyverse)
+  library (readxl)
+  library(yaml)
+  library(devtools)
+  library(jsonlite)
+  library (data.table)
+  library (RcppEigen)
+  library (pander)
+  library (writexl)
+  library (RSQLite)
 
 
 
@@ -96,6 +96,10 @@ library (RSQLite)
   pheno$zSteatosis = rankZ(pheno$Liver_Steatosis)
   pheno$zBallooning = rankZ(pheno$Liver_Ballooning)
   pheno$zFibrosis = rankZ(pheno$Liver_Fibrosis)
+  pheno$zInflammation = rankZ(pheno$Liver_Inflammation)
+  pheno$zLiverWeight = rankZ(pheno$Liver_Weight)
+  pheno$zBodyWeight = rankZ(pheno$Final_Weight)
+  pheno$zLiverWeightBodyWeight = rankZ(pheno$Liver_Weight_Final_Weight_Ratio)
 
 
   
@@ -303,6 +307,150 @@ library (RSQLite)
   
   
 ####################################################
+## Inflammation
+## Plot Genome Scans with Permutation Tests
+####################################################
+  
+  qtlscan_Inflammation <- scan1(genoprobs = probs, pheno = pheno["zInflammation"], kinship = kinship_loco, addcovar = sexgen, cores=10)
+  perm_Inflammation <- scan1perm(genoprobs = probs, pheno = pheno["zInflammation"], addcovar = sexgen, n_perm = 1000, cores=10)
+  
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  threshold_Inflammation = summary(perm_Inflammation, alpha = c(0.2, 0.1, 0.05))
+  plot_scan1(x = qtlscan_Inflammation, map = control$gmap,  main = "Genome Scan for Inflammation", ylim = c(0,11))
+  abline(h = threshold_Inflammation, col = c("purple", "red", "blue"), lwd = 2, lty = "dashed")
+  
+  #using gmap (cM)
+  gmap_peaksInflammation <- find_peaks(scan1_output = qtlscan_Inflammation, map = control$gmap, threshold = summary(perm_Inflammation, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+  #using pmap (Mbp)
+  peaksInflammation <- find_peaks(scan1_output = qtlscan_Inflammation, map = control$pmap, threshold = summary(perm_Inflammation, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+
+
+####################################################
+## Liver Weight
+## Plot Genome Scans with Permutation Tests
+####################################################
+  
+  qtlscan_LiverWeight <- scan1(genoprobs = probs, pheno = pheno["zLiverWeight"], kinship = kinship_loco, addcovar = sexgen, cores=10)
+  perm_LiverWeight <- scan1perm(genoprobs = probs, pheno = pheno["zLiverWeight"], addcovar = sexgen, n_perm = 1000, cores=10)
+  
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  threshold_LiverWeight = summary(perm_LiverWeight, alpha = c(0.2, 0.1, 0.05))
+  plot_scan1(x = qtlscan_LiverWeight, map = control$gmap,  main = "Genome Scan for Liver Weight", ylim = c(0,11))
+  abline(h = threshold_LiverWeight, col = c("purple", "red", "blue"), lwd = 2, lty = "dashed")
+  
+  #using gmap (cM)
+  gmap_peaksLiverWeight <- find_peaks(scan1_output = qtlscan_LiverWeight, map = control$gmap, threshold = summary(perm_LiverWeight, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+  #using pmap (Mbp)
+  peaksLiverWeight <- find_peaks(scan1_output = qtlscan_LiverWeight, map = control$pmap, threshold = summary(perm_LiverWeight, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+
+# Liver Weight --- Chromosome 11
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  
+  #using gmap (cM)
+  chr = "11"
+  coef_blup_LiverWeight_chr11 <- scan1blup(genoprobs =  probs[,chr], pheno = pheno["zLiverWeight"], kinship = kinship_loco[[chr]], addcovar = sexgen, cores = 2)
+  plot_coefCC(x = coef_blup_LiverWeight_chr11, map = control$gmap, scan1_output = qtlscan_LiverWeight, main = "Liver Weight BLUPs plotted with CC Founders", legend = "bottomleft", bgcolor="gray95")
+  xlim <- c(15,35)
+  plot_coefCC(x = coef_blup_LiverWeight_chr11, map = control$gmap, scan1_output = qtlscan_LiverWeight, main = "Liver Weight BLUPs plotted with CC Founders", legend = "bottomleft", bgcolor="gray95", xlim = xlim)
+  
+  #using pmap (Mbp)
+  chr = "11"
+  variants_LiverWeight_chr11 <- query_variants(chr,37.5, 41)
+  out_snps_LiverWeight_chr11 <- scan1snps(genoprobs = probs, map = R01_GSH_DO_QTLdata$pmap, pheno = pheno["zLiverWeight"], kinship = kinship_loco[[chr]], addcovar = sexgen, query_func = query_variants,
+                                          chr = chr, start = 37.5, end = 41, keep_all_snps = TRUE)
+  plot_snpasso(out_snps_LiverWeight_chr11$lod, out_snps_LiverWeight_chr11$snpinfo, main = "Liver Weight SNPs")
+  
+  LiverWeight_Genes_MGI_chr11 <- query_genes_mgi(chr = chr, start = 37.5, end = 41)
+  plot(out_snps_LiverWeight_chr11$lod, out_snps_LiverWeight_chr11$snpinfo, drop_hilit=1.5, genes = LiverWeight_Genes_MGI_chr11, main = "Liver Weight Genes MGI")
+
+  
+  
+####################################################
+## Body Weight
+## Plot Genome Scans with Permutation Tests
+####################################################
+  
+  qtlscan_BodyWeight <- scan1(genoprobs = probs, pheno = pheno["zBodyWeight"], kinship = kinship_loco, addcovar = sexgen, cores=10)
+  perm_BodyWeight <- scan1perm(genoprobs = probs, pheno = pheno["zBodyWeight"], addcovar = sexgen, n_perm = 1000, cores=10)
+  
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  threshold_BodyWeight = summary(perm_BodyWeight, alpha = c(0.2, 0.1, 0.05))
+  plot_scan1(x = qtlscan_BodyWeight, map = control$gmap,  main = "Genome Scan for Body Weight", ylim = c(0,11))
+  abline(h = threshold_BodyWeight, col = c("purple", "red", "blue"), lwd = 2, lty = "dashed")
+  
+  #using gmap (cM)
+  gmap_peaksBodyWeight <- find_peaks(scan1_output = qtlscan_BodyWeight, map = control$gmap, threshold = summary(perm_BodyWeight, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+  #using pmap (Mbp)
+  peaksBodyWeight <- find_peaks(scan1_output = qtlscan_BodyWeight, map = control$pmap, threshold = summary(perm_BodyWeight, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+
+  
+####################################################
+## Liver Weight/Body Weight Ratio
+## Plot Genome Scans with Permutation Tests
+####################################################
+  
+  qtlscan_LiverWeightBodyWeight <- scan1(genoprobs = probs, pheno = pheno["zLiverWeightBodyWeight"], kinship = kinship_loco, addcovar = sexgen, cores=10)
+  perm_LiverWeightBodyWeight <- scan1perm(genoprobs = probs, pheno = pheno["zLiverWeightBodyWeight"], addcovar = sexgen, n_perm = 1000, cores=10)
+  
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  threshold_LiverWeightBodyWeight = summary(perm_LiverWeightBodyWeight, alpha = c(0.2, 0.1, 0.05))
+  plot_scan1(x = qtlscan_LiverWeightBodyWeight, map = control$gmap,  main = "Genome Scan for Liver Weight/Body Weight", ylim = c(0,11))
+  abline(h = threshold_LiverWeightBodyWeight, col = c("purple", "red", "blue"), lwd = 2, lty = "dashed")
+  
+  #using gmap (cM)
+  gmap_peaksLiverWeightBodyWeight <- find_peaks(scan1_output = qtlscan_LiverWeightBodyWeight, map = control$gmap, threshold = summary(perm_LiverWeightBodyWeight, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+  #using pmap (Mbp)
+  peaksLiverWeightBodyWeight <- find_peaks(scan1_output = qtlscan_LiverWeightBodyWeight, map = control$pmap, threshold = summary(perm_LiverWeightBodyWeight, alpha = 0.2), peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
+  
+# Liver Weight/Body Weight --- Chromosome 11
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  
+  #using gmap (cM)
+  chr = "11"
+  coef_blup_LiverWeightBodyWeight_chr11 <- scan1blup(genoprobs =  probs[,chr], pheno = pheno["zLiverWeightBodyWeight"], kinship = kinship_loco[[chr]], addcovar = sexgen, cores = 2)
+  plot_coefCC(x = coef_blup_LiverWeightBodyWeight_chr11, map = control$gmap, scan1_output = qtlscan_LiverWeightBodyWeight, main = "Liver Weight/Body Weight BLUPs plotted with CC Founders", legend = "bottomleft", bgcolor="gray95")
+  xlim <- c(15,40)
+  plot_coefCC(x = coef_blup_LiverWeightBodyWeight_chr11, map = control$gmap, scan1_output = qtlscan_LiverWeightBodyWeight, main = "Liver Weight/Body Weight BLUPs plotted with CC Founders", legend = "bottomleft", bgcolor="gray95", xlim = xlim)
+  
+  #using pmap (Mbp)
+  chr = "11"
+  variants_LiverWeightBodyWeight_chr11 <- query_variants(chr, 54.5, 58)
+  out_snps_LiverWeightBodyWeight_chr11 <- scan1snps(genoprobs = probs, map = R01_GSH_DO_QTLdata$pmap, pheno = pheno["zLiverWeightBodyWeight"], kinship = kinship_loco[[chr]], addcovar = sexgen, query_func = query_variants,
+                                                    chr = chr, start = 54.5, end = 58, keep_all_snps = TRUE)
+  plot_snpasso(out_snps_LiverWeightBodyWeight_chr11$lod, out_snps_LiverWeightBodyWeight_chr11$snpinfo, main = "Liver Weight/Body Weight SNPs")
+  
+  LiverWeightBodyWeight_Genes_MGI_chr11 <- query_genes_mgi(chr = chr, start = 54.5, end = 58)
+  plot(out_snps_LiverWeightBodyWeight_chr11$lod, out_snps_LiverWeightBodyWeight_chr11$snpinfo, drop_hilit=1.5, genes = LiverWeightBodyWeight_Genes_MGI_chr11, main = "Liver Weight/Body Weight Genes MGI")
+
+# Liver Weight/Body Weight --- Chromosome 12
+  par(mar=c(4.1, 4.1, 2.6, 2.6))
+  
+  #using gmap (cM)
+  chr = "12"
+  coef_blup_LiverWeightBodyWeight_chr12 <- scan1blup(genoprobs =  probs[,chr], pheno = pheno["zLiverWeightBodyWeight"], kinship = kinship_loco[[chr]], addcovar = sexgen, cores = 2)
+  plot_coefCC(x = coef_blup_LiverWeightBodyWeight_chr12, map = control$gmap, scan1_output = qtlscan_LiverWeightBodyWeight, main = "Liver Weight/Body Weight BLUPs plotted with CC Founders", legend = "bottomleft", bgcolor="gray95")
+  xlim <- c(50,70)  
+  plot_coefCC(x = coef_blup_LiverWeightBodyWeight_chr12, map = control$gmap, scan1_output = qtlscan_LiverWeightBodyWeight, main = "Liver Weight/Body Weight BLUPs plotted with CC Founders", legend = "bottomleft", bgcolor="gray95", xlim = xlim)
+  
+  #using pmap (Mbp)
+  chr = "12"
+  variants_LiverWeightBodyWeight_chr12 <- query_variants(chr, 111.5, 114)
+  out_snps_LiverWeightBodyWeight_chr12 <- scan1snps(genoprobs = probs, map = R01_GSH_DO_QTLdata$pmap, pheno = pheno["zLiverWeightBodyWeight"], kinship = kinship_loco[[chr]], addcovar = sexgen, query_func = query_variants,
+                                                    chr = chr, start = 111.5, end = 114, keep_all_snps = TRUE)
+  plot_snpasso(out_snps_LiverWeightBodyWeight_chr12$lod, out_snps_LiverWeightBodyWeight_chr12$snpinfo, main = "Liver Weight/Body Weight SNPs")
+  
+  LiverWeightBodyWeight_Genes_MGI_chr12 <- query_genes_mgi(chr = chr, start = 111.5, end = 114)
+  plot(out_snps_LiverWeightBodyWeight_chr12$lod, out_snps_LiverWeightBodyWeight_chr12$snpinfo, drop_hilit=1.5, genes = LiverWeightBodyWeight_Genes_MGI_chr12, main = "Liver Weight/Body Weight Genes MGI")
+  
+  
+  
+####################################################
 ## Export genes
 ####################################################
 
@@ -319,7 +467,7 @@ write_xlsx(list(  "Steatosis chr18" = Steatosis_Genes_MGI_chr18,
 ## Export all QTL with LOD scores > 6 
 ####################################################
 
-scans <- cbind(qtlscan_AST, qtlscan_ALT, qtlscan_ASTALTRatio, qtlscan_Ballooning, qtlscan_Steatosis)
+scans <- cbind(qtlscan_AST, qtlscan_ALT, qtlscan_ASTALTRatio, qtlscan_Ballooning, qtlscan_Steatosis, qtlscan_Inflammation, qtlscan_LiverWeight, qtlscan_BodyWeight, qtlscan_LiverWeightBodyWeight)
 
 qtl_gmap <- find_peaks(scans, map = control$gmap, threshold = 6, peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
 qtl_pmap <- find_peaks(scans, map = control$pmap, threshold = 6, peakdrop = 1.8, drop = 1.5, expand2markers = FALSE)
@@ -333,5 +481,21 @@ write_xlsx(list("QTL List RankZ SexGen - cM" = qtl_gmap,
            "QTL List.xlsx")
 
 
+####################################################
+## Heritability Calculations
+####################################################
+
+kinship_lmm <- calc_kinship(probs = probs, use_allele_probs = TRUE, cores = 2)
+
+herit_AST <- est_herit(pheno["zAST"], kinship_lmm, sexgen, cores = 2)
+herit_ALT <- est_herit(pheno["zALT"], kinship_lmm, sexgen, cores = 2)
+herit_ASTALTRatio <- est_herit(pheno["zASTALTRatio"], kinship_lmm, sexgen, cores = 2)
+herit_Steatosis <- est_herit(pheno["zSteatosis"], kinship_lmm, sexgen, cores = 2)
+herit_Ballooning <- est_herit(pheno["zBallooning"], kinship_lmm, sexgen, cores = 2)
+herit_Fibrosis <- est_herit(pheno["zFibrosis"], kinship_lmm, sexgen, cores = 2)
+herit_Inflammation <- est_herit(pheno["zInflammation"], kinship_lmm, sexgen, cores = 2)
+herit_LiverWeight <- est_herit(pheno["zLiverWeight"], kinship_lmm, sexgen, cores = 2)
+herit_BodyWeight <- est_herit(pheno["zBodyWeight"], kinship_lmm, sexgen, cores = 2)
+herit_LiverWeightBodyWeight <- est_herit(pheno["zLiverWeightBodyWeight"], kinship_lmm, sexgen, cores = 2)
 
 
